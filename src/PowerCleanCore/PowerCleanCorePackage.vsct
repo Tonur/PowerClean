@@ -9,21 +9,28 @@
 
 		<Groups>
 			<!-- Define a group, but do not define its parent here (use the CommandPlacements section below) -->
-			<Group guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="MyGroupForCommands"/>
+			<Group guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionGroupCommands"/>
+			<Group guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectGroupCommands"/>
 		</Groups>
 
 		<Buttons>
 			<!-- Define a command (button), but do not define its parent here (use the CommandPlacements section below) -->
-			<Button guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="Command1Id" type="Button">
+			<Button guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionCommandId" type="Button">
 				<Icon guid="guidImages" id="bmpPic1" />
 				<Strings>
-					<ButtonText>Command1</ButtonText>
+					<ButtonText>PowerClean Solution</ButtonText>
+				</Strings>
+			</Button>
+			<Button guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectCommandId" type="Button">
+				<Icon guid="guidImages" id="bmpPic1" />
+				<Strings>
+					<ButtonText>PowerClean Project</ButtonText>
 				</Strings>
 			</Button>
 		</Buttons>
 
 		<Bitmaps>
-			<Bitmap guid="guidImages" href="Resources\PowerShellCommand.png" usedList="bmpPic1"/>
+			<Bitmap guid="guidImages" href="Resources\PowerCleanCommand.png" usedList="bmpPic1"/>
 		</Bitmaps>
 
 	</Commands>
@@ -31,26 +38,65 @@
 	<CommandPlacements>
 
 		<!-- Placement for group. The parent of a group is a menu, context menu or toolbar. 
-           The priority sets the position of the group compared to the priority of other existing groups in the menu.    
-      -->
-		<CommandPlacement guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="MyGroupForCommands" priority="0x0100">
+		The priority sets the position of the group compared to the priority of other existing groups in the menu. -->
+		<!--Solution:-->
+		<CommandPlacement guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionGroupCommands" priority="0x0100">
 			<!-- The parent of the group will be the Solution context menu -->
 			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_SOLNNODE"/>
 		</CommandPlacement>
 
 		<!-- Placement for command. The parent of a command is always a group, never a menu, context menu or toolbar. -->
-		<CommandPlacement guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="Command1Id" priority="0x0001" >
-			<Parent guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="MyGroupForCommands"/>
+		<CommandPlacement guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionCommandId" priority="0x0001" >
+			<Parent guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionGroupCommands"/>
+		</CommandPlacement>
+		
+		<!--Project:-->
+		<CommandPlacement guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectGroupCommands" priority="0x0100">
+			<!-- The parent of the group will be the Solution context menu -->
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
+		</CommandPlacement>
+
+		<!-- Placement for command. The parent of a command is always a group, never a menu, context menu or toolbar. -->
+		<CommandPlacement guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectCommandId" priority="0x0001" >
+			<Parent guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectGroupCommands"/>
+		</CommandPlacement>
+
+		<!--Build Menu - Solution:-->
+		<CommandPlacement guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionGroupCommands" priority="0x0100">
+			<!-- The parent of the group will be the Solution context menu -->
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_BUILD"/>
+		</CommandPlacement>
+
+		<!-- Placement for command. The parent of a command is always a group, never a menu, context menu or toolbar. -->
+		<CommandPlacement guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionCommandId" priority="0x0001" >
+			<Parent guid="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" id="PowerCleanSolutionGroupCommands"/>
+		</CommandPlacement>
+
+		<!--Build Menu - Project:-->
+		<CommandPlacement guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectGroupCommands" priority="0x0100">
+			<!-- The parent of the group will be the Solution context menu -->
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_BUILD"/>
+		</CommandPlacement>
+
+		<!-- Placement for command. The parent of a command is always a group, never a menu, context menu or toolbar. -->
+		<CommandPlacement guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectCommandId" priority="0x0001" >
+			<Parent guid="guidPowerCleanCoreCommandProjectContextMenuCmdSet" id="PowerCleanProjectGroupCommands"/>
 		</CommandPlacement>
 	</CommandPlacements>
 
 	<Symbols>
 		<GuidSymbol name="guidPowerCleanCoreCommandSolutionContextMenu" value="{cffa6255-844b-403b-9a39-0361b700844d}" />
 
-		<GuidSymbol name="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" value="{42d8467b-0102-4e3f-964c-dbedf18b2323}">
-			<IDSymbol name="MyGroupForCommands" value="0x1020" />
+		<GuidSymbol name="guidPowerCleanCoreCommandSolutionContextMenuCmdSet" value="{81B958EF-2F33-4A9E-9675-517F62E0B08C}">
+			<IDSymbol name="PowerCleanSolutionGroupCommands" value="0x1020" />
 			<!-- Warning!!: Keep the value in sync with the code in Command1.cs -->
-			<IDSymbol name="Command1Id" value="0x0100" />
+			<IDSymbol name="PowerCleanSolutionCommandId" value="0x0100" />
+		</GuidSymbol>
+
+		<GuidSymbol name="guidPowerCleanCoreCommandProjectContextMenuCmdSet" value="{E43E8D5C-FB39-4373-8A7D-26C65583CC25}">
+			<IDSymbol name="PowerCleanProjectGroupCommands" value="0x1021" />
+			<!-- Warning!!: Keep the value in sync with the code in Command1.cs -->
+			<IDSymbol name="PowerCleanProjectCommandId" value="0x0100" />
 		</GuidSymbol>
 
 		<GuidSymbol name="guidImages" value="{a87375b7-9437-46b9-b344-66e459cc36ed}" >

@@ -1,8 +1,15 @@
 ﻿using System;
+using System.ComponentModel.Design;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Threading;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using PowerCleanCore.Helpers;
+using PowerCleanCore.Interfaces;
+using PowerCleanCore.Services;
 using Task = System.Threading.Tasks.Task;
 
 namespace PowerCleanCore
@@ -24,7 +31,26 @@ namespace PowerCleanCore
       // Do any initialization that requires the UI thread after switching to the UI thread.
       // Otherwise, remove the switch to the UI thread if you don't need it.
       await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-      await PowerShellCommand.InitializeAsync(this);
+
+      this.AddService(typeof(IStatusBarService), async (container, token, type) =>
+      {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(token);
+
+        if (!(await GetServiceAsync(typeof(SVsStatusbar)) is IVsStatusbar statusBar)) 
+          return null;
+
+        var service = new StatusBarService(statusBar);
+        return await Task.FromResult(service);
+
+      });
+
+      this.AddService(typeof(IPowerShellService), async (container, token, type) =>
+      {
+        var service = new PowerShellService();
+        return await Task.FromResult(service);
+      });
+
+      await PowerCleanCommand.InitializeAsync(this);
     }
   }
 }

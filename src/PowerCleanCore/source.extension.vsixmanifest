@@ -3,7 +3,8 @@
     <Metadata>
         <Identity Id="PowerCleanCore.74448575-c64a-429e-b400-a745d2bb73c4" Version="0.0.1" Language="en-US" Publisher="Christoffer Kragh Pedersen" />
         <DisplayName>PowerCleanCore</DisplayName>
-        <Description xml:space="preserve">Clean up bin/obj folders in project and solutions. Gets rid of all data in those folders, that potentially messes with the build or functionallity of Visual Studio.</Description>
+        <Description xml:space="preserve">Clean up bin/obj folders in project and solutions. Gets rid of all data in those folders, that potentially messes with the build or functionallity of Visual Studio.
+Clean by Vadim Solomakhin from the Noun Project</Description>
         <Tags>PowerClean; Clean; Misc; Miscelaneous; Menu; Tools; Build</Tags>
     </Metadata>
     <Installation>
