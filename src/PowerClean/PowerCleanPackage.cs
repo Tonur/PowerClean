@@ -1,13 +1,9 @@
 ﻿using System;
-using System.ComponentModel.Design;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Threading;
-using EnvDTE;
-using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using PowerCleanCore.Helpers;
 using PowerCleanCore.Interfaces;
 using PowerCleanCore.Services;
 using Task = System.Threading.Tasks.Task;

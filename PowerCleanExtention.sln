@@ -8,7 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		ContextNameConstants.MD = ContextNameConstants.MD
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerCleanCore", "src\PowerCleanCore\PowerCleanCore.csproj", "{A36D7223-8B5A-4495-B929-F6E97CCA7F27}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerClean", "src\PowerClean\PowerClean.csproj", "{A36D7223-8B5A-4495-B929-F6E97CCA7F27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

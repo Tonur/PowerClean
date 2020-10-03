@@ -9,7 +9,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
-using Serilog.Core;
 using Serilog.Events;
 
 namespace PowerCleanCore.Helpers
@@ -31,7 +30,7 @@ namespace PowerCleanCore.Helpers
       {
         monitorSelection.GetCurrentSelection(out var hierarchyPointer,
           out var itemId,
-          out var multiItemSelect,
+          out _,
           out var selectionContainerPointer);
 
         if (Marshal.GetTypedObjectForIUnknown(
@@ -65,10 +64,10 @@ namespace PowerCleanCore.Helpers
       if (dte.ActiveWindow is Window2 window && window.Type == vsWindowType.vsWindowTypeDocument)
       {
         // if a document is active, use the document's containing directory
-        Document doc = dte.ActiveDocument;
+        var doc = dte.ActiveDocument;
         if (doc != null && !string.IsNullOrEmpty(doc.FullName))
         {
-          ProjectItem docItem = dte.Solution.FindProjectItem(doc.FullName);
+          var docItem = dte.Solution.FindProjectItem(doc.FullName);
 
           if (docItem?.Properties != null)
           {
@@ -85,7 +84,9 @@ namespace PowerCleanCore.Helpers
       var projectItem = item as ProjectItem;
       if (projectItem != null && "{6BB5F8F0-4483-11D3-8BCF-00C04F8EC28C}" == projectItem.Kind) //Constants.vsProjectItemKindVirtualFolder
       {
+#pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
         var items = projectItem.ProjectItems.Cast<ProjectItem>().Where(it => File.Exists(it.FileNames[1]));
+#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
         foreach (var fileItem in items)
         {
           folder = Path.GetDirectoryName(fileItem.FileNames[1]);
@@ -193,7 +194,9 @@ namespace PowerCleanCore.Helpers
     public static bool IsKind(this Project project, params string[] kindGuids)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
+#pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
       return kindGuids.Any(guid => project.Kind.Equals(guid, StringComparison.OrdinalIgnoreCase));
+#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
     }
   }
 }

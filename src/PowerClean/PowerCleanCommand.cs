@@ -9,7 +9,6 @@ using Microsoft;
 using Microsoft.VisualStudio.Shell;
 using PowerCleanCore.Helpers;
 using PowerCleanCore.Interfaces;
-using PowerCleanCore.Services;
 using Serilog;
 using Task = System.Threading.Tasks.Task;
 
@@ -134,7 +133,7 @@ namespace PowerCleanCore
       }
       finally
       {
-        _statusBarService.EndWorkingAnimation();
+        _statusBarService.EndWorkingAnimation(); //Todo this does not clear, the DisplayWorkingAnimation message is still visible
       }
 
 

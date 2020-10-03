@@ -31,11 +31,11 @@ namespace PowerCleanCore.Services
       // Freeze the status bar.
       _statusBar.FreezeOutput(timeMs);
 
-      _ = Task.Delay(timeMs).ContinueWith(task =>
+      var unused = Task.Delay(timeMs).ContinueWith(t =>
         {
           Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
-          // Clear the status bar text.
-          _statusBar.FreezeOutput(0);
+        // Clear the status bar text.
+        _statusBar.FreezeOutput(0);
           _statusBar.Clear();
         }, TaskScheduler.Default);
     }
@@ -59,7 +59,7 @@ namespace PowerCleanCore.Services
     public void StopShowMessage()
     {
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
-      // Clear the status bar text.
+      // Clear the status bar text. TODO this isn't working properly
       _statusBar.FreezeOutput(0);
       _statusBar.Clear();
     }
@@ -85,7 +85,7 @@ namespace PowerCleanCore.Services
 
       object animationIcon = icon ?? DEFAULT_ICON;
 
-      // Stop the animation.
+      // Stop the animation. TODO there maybe some issues with animation
       _statusBar.Animation(0, ref animationIcon);
       StopShowMessage();
     }
