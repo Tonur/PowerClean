@@ -9,6 +9,7 @@ Icon Credits: Clean by Vadim Solomakhin from the Noun Project</Description>
         <Icon>Resources\PowerCleanIconHiRez.png</Icon>
         <PreviewImage>Resources\PowerCleanCommand.png</PreviewImage>
         <Tags>PowerClean; Clean; Misc; Miscelaneous; Menu; Tools; Build</Tags>
+        <Preview>true</Preview>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[16.0, 17.0)" />

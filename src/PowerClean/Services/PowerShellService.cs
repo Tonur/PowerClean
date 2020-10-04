@@ -7,7 +7,7 @@ namespace PowerClean.Services
 #nullable enable
   public class PowerShellService : IPowerShellService
   {
-    private static string PowerCleanCommand(string folder) => string.Concat($"Get-ChildItem {folder}", @"-include bin,obj -Recurse | ForEach-Object ($_) { Remove-Item $_.FullName -Force -Recurse }");
+    private static string PowerCleanCommand(string folder) => string.Concat($"Get-ChildItem {folder} ", @"-include bin,obj -Recurse | ForEach-Object ($_) { Remove-Item $_.FullName -Force -Recurse }");
 
     public void PowerClean(string folder)
     {
