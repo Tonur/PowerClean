@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PowerClean
+namespace PowerClean.Exceptions
 {
   internal class NoProjectSelectedException : Exception
   {

@@ -8,6 +8,7 @@ using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using PowerClean.Exceptions;
 using Serilog;
 using Serilog.Events;
 

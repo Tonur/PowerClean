@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("CKP")]
 [assembly: AssemblyProduct("PowerClean")]
-[assembly: AssemblyCopyright("© Christoffer Kragh Pedersen - 2020")]
+[assembly: AssemblyCopyright("Christoffer Kragh Pedersen - 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("en-UK")]
 
