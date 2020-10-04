@@ -32,9 +32,35 @@ namespace PowerClean.Services
       return new Message(_statusBar, message);
     }
 
-    public IDisposable ShowWorkingAnimation(string message, short? icon = null)
+    private Message? CurrentMessage { get; set; }
+
+    public void StartMessage(string message)
+    {
+      CurrentMessage = new Message(_statusBar, message);
+    }
+
+    public void EndMessage(string? endMessage = null)
+    {
+      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+      CurrentMessage?.Dispose(endMessage);
+    }
+
+    public IDisposable ShowWorkingAnimation(string message = "Working...", short? icon = null)
     {
       return new Animation(_statusBar, message, icon);
+    }
+
+    private Animation? CurrentAnimation { get; set; }
+
+    public void StartWorkingAnimation(string message = "Working...", short? icon = null)
+    {
+      CurrentAnimation = new Animation(_statusBar, message, icon);
+    }
+
+    public void EndWorkingAnimation(string endMessage, short? icon = null)
+    {
+      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+      CurrentAnimation?.Dispose(endMessage, icon);
     }
   }
 
@@ -60,12 +86,14 @@ namespace PowerClean.Services
       _statusBar.SetText(message);
     }
 
-    public void Dispose()
+    void IDisposable.Dispose() => Dispose();
+
+    public void Dispose(string? endMessage = null)
     {
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
       // Clear the status bar text.
       _statusBar.FreezeOutput(0);
-      _statusBar.SetText("Ready");
+      _statusBar.SetText(endMessage ?? "ready");
       _statusBar.Clear();
     }
   }
@@ -92,12 +120,15 @@ namespace PowerClean.Services
       _statusBar.Animation(1, ref _animationIcon);
     }
 
-    public void Dispose()
+    void IDisposable.Dispose() => Dispose();
+
+    public void Dispose(string? message = null, short? icon = null)
     {
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
       // Stop the animation.
+      _animationIcon = icon ?? DEFAULT_ICON;
       _statusBar.Animation(0, ref _animationIcon);
-      _message.Dispose();
+      _message.Dispose(message);
     }
   }
 }

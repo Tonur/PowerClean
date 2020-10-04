@@ -79,7 +79,9 @@ namespace PowerClean
     /// <param name="e">Event args.</param>
     private async Task ExecuteAsync(object sender, EventArgs e)
     {
-      Log.Logger.Information($"PowerClean started in {nameof(PowerCleanProjectCommand)}.");
+      Log.Logger.Information($"PowerClean started in {nameof(PowerCleanProjectCommand)}."); //TODO Consider logging to the build output window with
+                                                                                            //"1>------ Clean started: Project: PowerClean, Configuration: Release Any CPU ------
+                                                                                            //========== Clean: 1 succeeded, 0 failed, 0 skipped ==========
       _statusBarService.StartWorkingAnimation("PowerCleaning started in the bin/obj folders"); //TODO make this a part of the logger and move it mainly to the PowerShell service
       var endMessage = "Ready";
       try
