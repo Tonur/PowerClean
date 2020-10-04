@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace PowerCleanCore.Interfaces
+namespace PowerClean.Interfaces
 {
   public interface IPowerShellService
   {

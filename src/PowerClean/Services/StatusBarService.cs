@@ -1,9 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell.Interop;
-using PowerCleanCore.Interfaces;
+using PowerClean.Interfaces;
 
-namespace PowerCleanCore.Services
+namespace PowerClean.Services
 {
+#nullable enable
+
   public class StatusBarService : IStatusBarService
   {
     private readonly IVsStatusbar _statusBar;
@@ -13,35 +16,36 @@ namespace PowerCleanCore.Services
       _statusBar = statusBar;
     }
 
-    public void ShowMessage(string message, int timeMs = 500)
+    public void ShowMessageForTime(string message, int timeMs = 500)
     {
-      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
-
-      // Make sure the status bar is not frozen
-      _statusBar.IsFrozen(out var frozen);
-
-      if (frozen != 0)
-      {
-        _statusBar.FreezeOutput(0);
-      }
-
-      // Set the status bar text and make its display static.
-      _statusBar.SetText(message);
-
-      // Freeze the status bar.
-      _statusBar.FreezeOutput(timeMs);
+      var messageObject = new Message(_statusBar, message);
 
       var unused = Task.Delay(timeMs).ContinueWith(t =>
-        {
-          Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
-        // Clear the status bar text.
-        _statusBar.FreezeOutput(0);
-          _statusBar.Clear();
-        }, TaskScheduler.Default);
+      {
+        Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+        messageObject.Dispose();
+      }, TaskScheduler.Default);
     }
 
-    public void StartShowMessage(string message)
+    public IDisposable ShowMessage(string message)
     {
+      return new Message(_statusBar, message);
+    }
+
+    public IDisposable ShowWorkingAnimation(string message, short? icon = null)
+    {
+      return new Animation(_statusBar, message, icon);
+    }
+  }
+
+  internal class Message : IDisposable
+  {
+    private readonly IVsStatusbar _statusBar;
+
+    public Message(IVsStatusbar statusBar, string message)
+    {
+      _statusBar = statusBar;
+
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
 
       // Make sure the status bar is not frozen
@@ -56,57 +60,44 @@ namespace PowerCleanCore.Services
       _statusBar.SetText(message);
     }
 
-    public void StopShowMessage()
+    public void Dispose()
     {
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
-      // Clear the status bar text. TODO this isn't working properly
+      // Clear the status bar text.
       _statusBar.FreezeOutput(0);
+      _statusBar.SetText("Ready");
       _statusBar.Clear();
     }
+  }
+
+  internal class Animation : IDisposable
+  {
+    private readonly IVsStatusbar _statusBar;
+    private readonly Message _message;
+
+    private object _animationIcon;
 
     // Use the standard Visual Studio icon for building.
-    private const short DEFAULT_ICON = (short) Constants.SBAI_Build;
+    private const short DEFAULT_ICON = (short)Constants.SBAI_Build;
 
-    public void DisplayWorkingAnimation(string message, short? icon = null)
+    public Animation(IVsStatusbar statusBar, string message, short? icon = null)
     {
+      _statusBar = statusBar;
+      _message = new Message(statusBar, message);
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
 
-      object animationIcon = icon ?? DEFAULT_ICON;
-
-      StartShowMessage(message);
+      _animationIcon = icon ?? DEFAULT_ICON;
       // Display the icon in the Animation region.
 
-      _statusBar.Animation(1, ref animationIcon);
+      _statusBar.Animation(1, ref _animationIcon);
     }
 
-    public void EndWorkingAnimation(short? icon = null)
+    public void Dispose()
     {
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
-
-      object animationIcon = icon ?? DEFAULT_ICON;
-
-      // Stop the animation. TODO there maybe some issues with animation
-      _statusBar.Animation(0, ref animationIcon);
-      StopShowMessage();
+      // Stop the animation.
+      _statusBar.Animation(0, ref _animationIcon);
+      _message.Dispose();
     }
-
-    public void UpdateProgressBar(string message, ref uint cookie)
-    {
-      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
-
-      // Initialize the progress bar.
-      _statusBar.Progress(ref cookie, 1, "", 0, 0);
-      StartShowMessage(message);
-      for (uint i = 0, total = 20; i <= total; i++)
-      {
-        // Display progress every second.
-        _statusBar.Progress(ref cookie, 1, message, i, total);
-      }
-
-      StopShowMessage();
-      // Clear the progress bar.
-      _statusBar.Progress(ref cookie, 0, "", 0, 0);
-    }
-
   }
 }

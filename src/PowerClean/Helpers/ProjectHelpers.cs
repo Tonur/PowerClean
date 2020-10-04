@@ -1,26 +1,51 @@
-﻿using EnvDTE;
-using EnvDTE80;
-
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
 using Serilog.Events;
 
-namespace PowerCleanCore.Helpers
+namespace PowerClean.Helpers
 {
+#nullable enable
   public static class ProjectHelpers
   {
-    private static readonly DTE2 Dte = PowerCleanCommand.Dte;
+    private static readonly DTE2? Dte = PowerCleanSolutionCommand.Dte;
 
-    public static object GetSelectedItem()
+    public static async Task<Project> GetProjectFromContextAsync()
+    {
+      await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+      ProjectItem? selectedItem = null;
+      Project? selectedProject = null;
+      var item = GetSelectedItem();
+      if (item != null)
+      {
+        var folder = FindFolder(item);
+
+        if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
+        {
+          selectedItem = item as ProjectItem;
+          selectedProject = item as Project;
+        }
+      }
+      var project = selectedItem?.ContainingProject ?? selectedProject ?? GetActiveProject();
+
+      if (project == null)
+        throw new NoProjectFoundException();
+      return project;
+    }
+
+    public static object? GetSelectedItem()
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      object selectedObject = null;
+      object? selectedObject = null;
 
       if (!(Package.GetGlobalService(typeof(SVsShellMonitorSelection)) is IVsMonitorSelection monitorSelection))
         // ReSharper disable once ExpressionIsAlwaysNull
@@ -53,7 +78,7 @@ namespace PowerCleanCore.Helpers
 
     }
 
-    public static string FindFolder(object item, _DTE dte)
+    public static string? FindFolder(object item)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
       if (item == null)
@@ -61,13 +86,13 @@ namespace PowerCleanCore.Helpers
         return null;
       }
 
-      if (dte.ActiveWindow is Window2 window && window.Type == vsWindowType.vsWindowTypeDocument)
+      if (Dte?.ActiveWindow is Window2 window && window.Type == vsWindowType.vsWindowTypeDocument)
       {
         // if a document is active, use the document's containing directory
-        var doc = dte.ActiveDocument;
+        var doc = Dte.ActiveDocument;
         if (doc != null && !string.IsNullOrEmpty(doc.FullName))
         {
-          var docItem = dte.Solution.FindProjectItem(doc.FullName);
+          var docItem = Dte.Solution.FindProjectItem(doc.FullName);
 
           if (docItem?.Properties != null)
           {
@@ -80,7 +105,7 @@ namespace PowerCleanCore.Helpers
         }
       }
 
-      string folder = null;
+      string? folder = null;
       var projectItem = item as ProjectItem;
       if (projectItem != null && "{6BB5F8F0-4483-11D3-8BCF-00C04F8EC28C}" == projectItem.Kind) //Constants.vsProjectItemKindVirtualFolder
       {
@@ -109,22 +134,22 @@ namespace PowerCleanCore.Helpers
       return folder;
     }
 
-    public static Project GetActiveProject()
+    public static Project? GetActiveProject()
     {
       ThreadHelper.ThrowIfNotOnUIThread();
       try
       {
 
-        if (Dte.ActiveSolutionProjects is Array activeSolutionProjects && activeSolutionProjects.Length > 0)
+        if (Dte?.ActiveSolutionProjects is Array activeSolutionProjects && activeSolutionProjects.Length > 0)
         {
           return activeSolutionProjects.GetValue(0) as Project;
         }
 
-        var doc = Dte.ActiveDocument;
+        var doc = Dte?.ActiveDocument;
 
         if (doc != null && !string.IsNullOrEmpty(doc.FullName))
         {
-          var item = Dte.Solution?.FindProjectItem(doc.FullName);
+          var item = Dte?.Solution?.FindProjectItem(doc.FullName);
 
           if (item != null)
           {
@@ -140,7 +165,7 @@ namespace PowerCleanCore.Helpers
       return null;
     }
 
-    public static string GetRootFolder(this Project project)
+    public static string? GetRootFolder(this Project project)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
       if (project == null)
@@ -150,7 +175,7 @@ namespace PowerCleanCore.Helpers
 
       if (project.IsKind("{66A26720-8FB5-11D2-AA7E-00C04F688DDE}")) //ProjectKinds.vsProjectKindSolutionFolder
       {
-        return Path.GetDirectoryName(Dte.Solution.FullName);
+        return Path.GetDirectoryName(Dte?.Solution.FullName);
       }
 
       if (string.IsNullOrEmpty(project.FullName))
@@ -158,7 +183,7 @@ namespace PowerCleanCore.Helpers
         return null;
       }
 
-      string fullPath;
+      string? fullPath;
 
       try
       {
@@ -189,6 +214,17 @@ namespace PowerCleanCore.Helpers
       }
 
       return File.Exists(fullPath) ? Path.GetDirectoryName(fullPath) : null;
+    }
+
+    public static string? GetSolutionFolder(this Project project)
+    {
+      return Path.GetDirectoryName(project?.DTE?.Solution?.FullName);
+    }
+
+
+    public static string? GetSolutionFolder()
+    {
+      return Path.GetDirectoryName(Dte?.Solution?.FullName);
     }
 
     public static bool IsKind(this Project project, params string[] kindGuids)

@@ -4,12 +4,13 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using PowerCleanCore.Interfaces;
-using PowerCleanCore.Services;
+using PowerClean.Interfaces;
+using PowerClean.Services;
 using Task = System.Threading.Tasks.Task;
 
-namespace PowerCleanCore
+namespace PowerClean
 {
+#nullable enable
   [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
   [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
   [Guid(PowerCleanCorePackage.PackageGuidString)]
@@ -46,7 +47,8 @@ namespace PowerCleanCore
         return await Task.FromResult(service);
       });
 
-      await PowerCleanCommand.InitializeAsync(this);
+      await PowerCleanSolutionCommand.InitializeAsync(this);
+      await PowerCleanProjectCommand.InitializeAsync(this);
     }
   }
 }

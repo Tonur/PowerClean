@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
-using PowerCleanCore.Interfaces;
+using PowerClean.Interfaces;
 
-namespace PowerCleanCore.Services
+namespace PowerClean.Services
 {
+#nullable enable
   public class PowerShellService : IPowerShellService
   {
     public void PowerClean(string folder) =>

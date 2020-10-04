@@ -1,34 +1,36 @@
-﻿using EnvDTE;
-using EnvDTE80;
-
-using System;
+﻿using System;
 using System.ComponentModel.Design;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft;
 using Microsoft.VisualStudio.Shell;
-using PowerCleanCore.Helpers;
-using PowerCleanCore.Interfaces;
+using Microsoft.VisualStudio.Shell.Interop;
+using PowerClean.Helpers;
+using PowerClean.Interfaces;
 using Serilog;
+using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
 using Task = System.Threading.Tasks.Task;
 
-namespace PowerCleanCore
+namespace PowerClean
 {
-  internal sealed class PowerCleanCommand
+#nullable enable
+  internal sealed class PowerCleanSolutionCommand
   {
     public const int CommandId = 0x0100;
 
     public static readonly Guid CommandSetSolution = new Guid("81B958EF-2F33-4A9E-9675-517F62E0B08C");
-    public static readonly Guid CommandSetProject = new Guid("E43E8D5C-FB39-4373-8A7D-26C65583CC25");
 
-    public static DTE2 Dte;
+    public static DTE2? Dte;
 
     private readonly AsyncPackage _package;
     private readonly IMenuCommandService _commandService;
     private readonly IStatusBarService _statusBarService;
     private readonly IPowerShellService _powerShellService;
 
-    private PowerCleanCommand(AsyncPackage package, IMenuCommandService commandService, IStatusBarService statusBarService, IPowerShellService powerShellService)
+    private PowerCleanSolutionCommand(AsyncPackage package, IMenuCommandService commandService, IStatusBarService statusBarService, IPowerShellService powerShellService)
     {
       this._package = package ?? throw new ArgumentNullException(nameof(package));
       _commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
@@ -40,23 +42,15 @@ namespace PowerCleanCore
 
     private void InitializeServices()
     {
-      #region Solution
       var menuSolutionCommandId = new CommandID(CommandSetSolution, CommandId);
       var menuSolutionItem = new MenuCommand((sender, e) => ExecuteAsync(sender, e).ConfigureAwait(true), menuSolutionCommandId);
       _commandService.AddCommand(menuSolutionItem);
-      #endregion
-
-      #region Project
-      var menuProjectCommandId = new CommandID(CommandSetProject, CommandId);
-      var menuProjectItem = new MenuCommand((sender, e) => ExecuteAsync(sender, e).ConfigureAwait(true), menuProjectCommandId);
-      _commandService.AddCommand(menuProjectItem);
-      #endregion
     }
 
-    public static PowerCleanCommand Instance { get; private set; }
+    public static PowerCleanSolutionCommand? Instance { get; private set; }
 
     // ReSharper disable once UnusedMember.Local
-    private IServiceProvider ServiceProvider => this._package;
+    private IAsyncServiceProvider ServiceProvider => this._package;
 
     public static async Task InitializeAsync(AsyncPackage package)
     {
@@ -73,7 +67,7 @@ namespace PowerCleanCore
         return;
       if (!(await package.GetServiceAsync(typeof(IPowerShellService)) is IPowerShellService powerShellService))
         return;
-      Instance = new PowerCleanCommand(package, commandService, statusBarService, powerShellService);
+      Instance = new PowerCleanSolutionCommand(package, commandService, statusBarService, powerShellService);
     }
 
     /// <summary>
@@ -85,35 +79,15 @@ namespace PowerCleanCore
     /// <param name="e">Event args.</param>
     private async Task ExecuteAsync(object sender, EventArgs e)
     {
-      await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-      _statusBarService.DisplayWorkingAnimation("PowerCleaning the bin/obj folders...");
-
-      var item = ProjectHelpers.GetSelectedItem();
-      var folder = ProjectHelpers.FindFolder(item, Dte);
-
-      if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
-      {
-        return;
-      }
-
-      var selectedItem = item as ProjectItem;
-      var selectedProject = item as Project;
-      var project = selectedItem?.ContainingProject ?? selectedProject ?? ProjectHelpers.GetActiveProject();
-
-      if (project == null)
-      {
-        // ReSharper disable once RedundantJumpStatement
-        return;
-      }
-
-      var rootFolder = project.GetRootFolder();
+      using var animation = _statusBarService.ShowWorkingAnimation("PowerCleaning the bin/obj folders...");
 
       try
       {
-        var task = _powerShellService.PowerCleanAsync(rootFolder);
+        
 
-        task.Start(TaskScheduler.Default);
+        var rootFolder = ProjectHelpers.GetSolutionFolder() ?? (await ProjectHelpers.GetProjectFromContextAsync()).GetSolutionFolder();
+
+        var task = _powerShellService.PowerCleanAsync(rootFolder);
 
         await task.ContinueWith(t =>
         {
@@ -130,30 +104,19 @@ namespace PowerCleanCore
       catch (Exception exception)
       {
         Log.Logger.Error(exception, "PowerClean failed with exception.");
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        var message = string.Format(CultureInfo.CurrentCulture, "Unexpected exception: {0} \n Inside {1}.ExecuteAsync()", exception.Message, this.GetType().FullName);
+        const string title = "ExecuteAsync failed";
+
+        // Show a message box to prove we were here
+        VsShellUtilities.ShowMessageBox(
+            _package,
+            message,
+            title,
+            OLEMSGICON.OLEMSGICON_INFO,
+            OLEMSGBUTTON.OLEMSGBUTTON_OK,
+            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
       }
-      finally
-      {
-        _statusBarService.EndWorkingAnimation(); //Todo this does not clear, the DisplayWorkingAnimation message is still visible
-      }
-
-
-      //ThreadHelper.ThrowIfNotOnUIThread();
-      //var message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
-      //const string title = "Command1";
-
-      //var dte = (DTE)this.ServiceProvider.GetService(typeof(DTE));
-      //if (dte == null) throw new ArgumentNullException(nameof(dte));
-
-      //// Show a message box to prove we were here
-      //VsShellUtilities.ShowMessageBox(
-      //    _package,
-      //    message,
-      //    title,
-      //    OLEMSGICON.OLEMSGICON_INFO,
-      //    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-      //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
     }
-
-
   }
 }

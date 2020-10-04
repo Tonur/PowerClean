@@ -96,7 +96,7 @@
 		<GuidSymbol name="guidPowerCleanCoreCommandProjectContextMenuCmdSet" value="{E43E8D5C-FB39-4373-8A7D-26C65583CC25}">
 			<IDSymbol name="PowerCleanProjectGroupCommands" value="0x1021" />
 			<!-- Warning!!: Keep the value in sync with the code in Command1.cs -->
-			<IDSymbol name="PowerCleanProjectCommandId" value="0x0100" />
+			<IDSymbol name="PowerCleanProjectCommandId" value="0x0101" />
 		</GuidSymbol>
 
 		<GuidSymbol name="guidImages" value="{a87375b7-9437-46b9-b344-66e459cc36ed}" >
