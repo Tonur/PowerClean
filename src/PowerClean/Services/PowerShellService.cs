@@ -1,6 +1,7 @@
 ﻿using System.Management.Automation;
 using System.Threading.Tasks;
 using PowerClean.Interfaces;
+using Serilog;
 
 namespace PowerClean.Services
 {
@@ -11,18 +12,22 @@ namespace PowerClean.Services
 
     public void PowerClean(string folder)
     {
+      Log.Logger.Information($"PowerClean started in folder: {folder}.");
       var ps = PowerShell.Create();
       ps.AddCommand(PowerCleanCommand(folder));
 
       ps.Invoke();
+      Log.Logger.Information($"PowerClean succeeded.");
     }
 
     public async Task PowerCleanAsync(string folder)
     {
+      Log.Logger.Information($"PowerClean started in folder: {folder}.");
       var ps = PowerShell.Create();
       ps.AddCommand(PowerCleanCommand(folder));
 
       await Task.FromResult(ps.BeginInvoke());
+      Log.Logger.Information($"PowerClean succeeded.");
     }
   }
 }

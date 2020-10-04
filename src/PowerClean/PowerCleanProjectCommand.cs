@@ -79,8 +79,9 @@ namespace PowerClean
     /// <param name="e">Event args.</param>
     private async Task ExecuteAsync(object sender, EventArgs e)
     {
-      using var animation = _statusBarService.ShowWorkingAnimation("PowerCleaning the bin/obj folders...");
-
+      Log.Logger.Information($"PowerClean started in {nameof(PowerCleanProjectCommand)}.");
+      _statusBarService.StartWorkingAnimation("PowerCleaning started in the bin/obj folders"); //TODO make this a part of the logger and move it mainly to the PowerShell service
+      var endMessage = "Ready";
       try
       {
         var project = await ProjectHelpers.GetProjectFromContextAsync();
@@ -94,10 +95,12 @@ namespace PowerClean
           if (task.IsFaulted)
           {
             Log.Logger.Error(task.Exception, "PowerClean failed with exception.");
+            endMessage = $"PowerClean failed with exception: {task?.Exception?.Message}"; //TODO make this a part of the logger
           }
           else
           {
             Log.Logger.Information("PowerClean executed successfully.");
+            endMessage = "PowerClean succeeded";//TODO make this a part of the logger
           }
         }, TaskScheduler.Default);
       }
@@ -105,17 +108,23 @@ namespace PowerClean
       {
         Log.Logger.Error(exception, "PowerClean failed with exception.");
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-        var message = string.Format(CultureInfo.CurrentCulture, "Unexpected exception: {0} \n Inside {1}.ExecuteAsync()", exception.Message, this.GetType().FullName);
+        var message = string.Format(CultureInfo.CurrentCulture,
+          "Unexpected exception: {0} \n Inside {1}.ExecuteAsync()", exception.Message, this.GetType().FullName);
         const string title = "ExecuteAsync failed";
 
+        endMessage = $"PowerClean failed with exception: {exception.Message}";//TODO make this a part of the logger
         // Show a message box to prove we were here
         VsShellUtilities.ShowMessageBox(
-            _package,
-            message,
-            title,
-            OLEMSGICON.OLEMSGICON_INFO,
-            OLEMSGBUTTON.OLEMSGBUTTON_OK,
-            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+          _package,
+          message,
+          title,
+          OLEMSGICON.OLEMSGICON_INFO,
+          OLEMSGBUTTON.OLEMSGBUTTON_OK,
+          OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+      }
+      finally
+      {
+        _statusBarService.EndWorkingAnimation(endMessage);
       }
     }
   }
