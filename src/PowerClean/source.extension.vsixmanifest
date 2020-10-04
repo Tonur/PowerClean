@@ -7,7 +7,7 @@
 Icon Credits: Clean by Vadim Solomakhin from the Noun Project</Description>
         <License>LICENSE.TXT</License>
         <Icon>Resources\PowerCleanIconHiRez.png</Icon>
-        <PreviewImage>Resources\PowerCleanCommand.png</PreviewImage>
+        <PreviewImage>Resources\PowerCleanIconHiRez.png</PreviewImage>
         <Tags>PowerClean; Clean; Misc; Miscelaneous; Menu; Tools; Build</Tags>
         <Preview>true</Preview>
     </Metadata>

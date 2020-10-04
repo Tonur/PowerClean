@@ -30,7 +30,7 @@
 		</Buttons>
 
 		<Bitmaps>
-			<Bitmap guid="guidImages" href="Resources\PowerCleanCommand.png" usedList="bmpPic1"/>
+			<Bitmap guid="guidImages" href="Resources\PowerCleanIcon.png" usedList="bmpPic1"/>
 		</Bitmaps>
 
 	</Commands>

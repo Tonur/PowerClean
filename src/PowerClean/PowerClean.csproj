@@ -38,14 +38,14 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-		<DebugType>pdbonly</DebugType>
-		<Optimize>true</Optimize>
-		<OutputPath>bin\Release\</OutputPath>
-		<DefineConstants>TRACE</DefineConstants>
-		<ErrorReport>prompt</ErrorReport>
-		<WarningLevel>4</WarningLevel>
-	</PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Helpers\ProjectHelpers.cs" />
     <Compile Include="Interfaces\IStatusBarService.cs" />
@@ -61,6 +61,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="LICENSE.TXT">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\PowerCleanIcon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\PowerCleanIconHiRez.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
@@ -81,9 +88,6 @@
     <VSCTCompile Include="PowerCleanPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\PowerCleanCommand.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.0.206" ExcludeAssets="runtime" />
