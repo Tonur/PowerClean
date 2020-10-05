@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -18,6 +19,16 @@ namespace PowerClean.Helpers
   public static class ProjectHelpers
   {
     private static readonly DTE2? Dte = PowerCleanSolutionCommand.Dte;
+
+    private static ILogger? Logger
+    {
+      get
+      {
+        if (!(Package.GetGlobalService(typeof(ILogger)) is ILogger logger))
+          return null;
+        return logger;
+      }
+    }
 
     public static async Task<Project> GetProjectFromContextAsync()
     {
@@ -160,7 +171,7 @@ namespace PowerClean.Helpers
       }
       catch (Exception ex)
       {
-        Log.Logger.Write(LogEventLevel.Error, ex, "Error getting the active project.");
+        Logger?.Write(LogEventLevel.Error, ex, "Error getting the active project.");
       }
 
       return null;
@@ -217,23 +228,18 @@ namespace PowerClean.Helpers
       return File.Exists(fullPath) ? Path.GetDirectoryName(fullPath) : null;
     }
 
-    public static string? GetSolutionFolder(this Project project)
-    {
-      return Path.GetDirectoryName(project?.DTE?.Solution?.FullName);
-    }
-
-
-    public static string? GetSolutionFolder()
-    {
-      return Path.GetDirectoryName(Dte?.Solution?.FullName);
-    }
-
     public static bool IsKind(this Project project, params string[] kindGuids)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
 #pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
       return kindGuids.Any(guid => project.Kind.Equals(guid, StringComparison.OrdinalIgnoreCase));
 #pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
+    }
+
+    public static async Task<IEnumerable<Project>> GetAllProjectsAsync()
+    {
+      await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+      return Dte?.Solution?.Projects?.Cast<Project>() ?? new List<Project>();
     }
   }
 }

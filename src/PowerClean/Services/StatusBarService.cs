@@ -57,7 +57,7 @@ namespace PowerClean.Services
       CurrentAnimation = new Animation(_statusBar, message, icon);
     }
 
-    public void EndWorkingAnimation(string endMessage, short? icon = null)
+    public void EndWorkingAnimation(string? endMessage, short? icon = null)
     {
       Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
       CurrentAnimation?.Dispose(endMessage, icon);

@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using PowerClean.Helpers;
 using PowerClean.Interfaces;
 using Serilog;
+using Serilog.Core;
 using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
 using Task = System.Threading.Tasks.Task;
 
@@ -29,13 +30,15 @@ namespace PowerClean
     private readonly IMenuCommandService _commandService;
     private readonly IStatusBarService _statusBarService;
     private readonly IPowerShellService _powerShellService;
+    private readonly ILogger _logger;
 
-    private PowerCleanProjectCommand(AsyncPackage package, IMenuCommandService commandService, IStatusBarService statusBarService, IPowerShellService powerShellService)
+    private PowerCleanProjectCommand(AsyncPackage package, IMenuCommandService commandService, IStatusBarService statusBarService, IPowerShellService powerShellService, ILogger logger)
     {
       this._package = package ?? throw new ArgumentNullException(nameof(package));
       _commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
       _statusBarService = statusBarService ?? throw new ArgumentNullException(nameof(statusBarService));
       _powerShellService = powerShellService ?? throw new ArgumentNullException(nameof(powerShellService));
+      _logger = logger;
 
       InitializeServices();
     }
@@ -67,7 +70,9 @@ namespace PowerClean
         return;
       if (!(await package.GetServiceAsync(typeof(IPowerShellService)) is IPowerShellService powerShellService))
         return;
-      Instance = new PowerCleanProjectCommand(package, commandService, statusBarService, powerShellService);
+      if (!(await package.GetServiceAsync(typeof(ILogger)) is ILogger logger))
+        return;
+      Instance = new PowerCleanProjectCommand(package, commandService, statusBarService, powerShellService, logger);
     }
 
     /// <summary>
@@ -79,54 +84,16 @@ namespace PowerClean
     /// <param name="e">Event args.</param>
     private async Task ExecuteAsync(object sender, EventArgs e)
     {
-      Log.Logger.Information($"PowerClean started in {nameof(PowerCleanProjectCommand)}."); //TODO Consider logging to the build output window with
-                                                                                            //"1>------ Clean started: Project: PowerClean, Configuration: Release Any CPU ------
-                                                                                            //========== Clean: 1 succeeded, 0 failed, 0 skipped ==========
-      _statusBarService.StartWorkingAnimation("PowerCleaning started in the bin/obj folders"); //TODO make this a part of the logger and move it mainly to the PowerShell service
-      var endMessage = "Ready";
+      _logger.Verbose($"PowerClean started in {nameof(PowerCleanProjectCommand)}.");
       try
       {
         var project = await ProjectHelpers.GetProjectFromContextAsync();
-
-        var rootFolder = project.GetRootFolder();
-
-        var task = _powerShellService.PowerCleanAsync(rootFolder);
-
-        await task.ContinueWith(t =>
-        {
-          if (task.IsFaulted)
-          {
-            Log.Logger.Error(task.Exception, "PowerClean failed with exception.");
-            endMessage = $"PowerClean failed with exception: {task?.Exception?.Message}"; //TODO make this a part of the logger
-          }
-          else
-          {
-            Log.Logger.Information("PowerClean executed successfully.");
-            endMessage = "PowerClean succeeded";//TODO make this a part of the logger
-          }
-        }, TaskScheduler.Default);
+        
+        await _powerShellService.PowerCleanAsync(project);
       }
       catch (Exception exception)
       {
-        Log.Logger.Error(exception, "PowerClean failed with exception.");
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-        var message = string.Format(CultureInfo.CurrentCulture,
-          "Unexpected exception: {0} \n Inside {1}.ExecuteAsync()", exception.Message, this.GetType().FullName);
-        const string title = "ExecuteAsync failed";
-
-        endMessage = $"PowerClean failed with exception: {exception.Message}";//TODO make this a part of the logger
-        // Show a message box to prove we were here
-        VsShellUtilities.ShowMessageBox(
-          _package,
-          message,
-          title,
-          OLEMSGICON.OLEMSGICON_INFO,
-          OLEMSGBUTTON.OLEMSGBUTTON_OK,
-          OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-      }
-      finally
-      {
-        _statusBarService.EndWorkingAnimation(endMessage);
+        _logger.Warning(exception, "PowerClean failed cleaning project with exception {exception}.");
       }
     }
   }

@@ -2,6 +2,7 @@
 using System.ComponentModel.Design;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
@@ -29,13 +30,15 @@ namespace PowerClean
     private readonly IMenuCommandService _commandService;
     private readonly IStatusBarService _statusBarService;
     private readonly IPowerShellService _powerShellService;
+    private readonly ILogger _logger;
 
-    private PowerCleanSolutionCommand(AsyncPackage package, IMenuCommandService commandService, IStatusBarService statusBarService, IPowerShellService powerShellService)
+    private PowerCleanSolutionCommand(AsyncPackage package, IMenuCommandService commandService, IStatusBarService statusBarService, IPowerShellService powerShellService, ILogger logger)
     {
       this._package = package ?? throw new ArgumentNullException(nameof(package));
       _commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
       _statusBarService = statusBarService ?? throw new ArgumentNullException(nameof(statusBarService));
       _powerShellService = powerShellService ?? throw new ArgumentNullException(nameof(powerShellService));
+      _logger = logger;
 
       InitializeServices();
     }
@@ -67,7 +70,9 @@ namespace PowerClean
         return;
       if (!(await package.GetServiceAsync(typeof(IPowerShellService)) is IPowerShellService powerShellService))
         return;
-      Instance = new PowerCleanSolutionCommand(package, commandService, statusBarService, powerShellService);
+      if (!(await package.GetServiceAsync(typeof(ILogger)) is ILogger logger))
+        return;
+      Instance = new PowerCleanSolutionCommand(package, commandService, statusBarService, powerShellService, logger);
     }
 
     /// <summary>
@@ -79,43 +84,15 @@ namespace PowerClean
     /// <param name="e">Event args.</param>
     private async Task ExecuteAsync(object sender, EventArgs e)
     {
-      using var animation = _statusBarService.ShowWorkingAnimation("PowerCleaning the bin/obj folders...");
-
+      _logger.Verbose($"PowerClean started in {nameof(PowerCleanSolutionCommand)}.");
       try
       {
-        
-
-        var rootFolder = ProjectHelpers.GetSolutionFolder() ?? (await ProjectHelpers.GetProjectFromContextAsync()).GetSolutionFolder();
-
-        var task = _powerShellService.PowerCleanAsync(rootFolder);
-
-        await task.ContinueWith(t =>
-        {
-          if (task.IsFaulted)
-          {
-            Log.Logger.Error(task.Exception, "PowerClean failed with exception.");
-          }
-          else
-          {
-            Log.Logger.Information("PowerClean executed successfully.");
-          }
-        }, TaskScheduler.Default);
+        var projects = await ProjectHelpers.GetAllProjectsAsync();
+        await _powerShellService.PowerCleanAsync(projects.ToArray());
       }
       catch (Exception exception)
       {
-        Log.Logger.Error(exception, "PowerClean failed with exception.");
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-        var message = string.Format(CultureInfo.CurrentCulture, "Unexpected exception: {0} \n Inside {1}.ExecuteAsync()", exception.Message, this.GetType().FullName);
-        const string title = "ExecuteAsync failed";
-
-        // Show a message box to prove we were here
-        VsShellUtilities.ShowMessageBox(
-            _package,
-            message,
-            title,
-            OLEMSGICON.OLEMSGICON_INFO,
-            OLEMSGBUTTON.OLEMSGBUTTON_OK,
-            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+        _logger.Warning(exception, "PowerClean failed cleaning project with exception {exception}.");
       }
     }
   }

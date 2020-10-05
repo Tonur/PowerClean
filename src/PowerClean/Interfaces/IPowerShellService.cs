@@ -1,10 +1,11 @@
 ﻿using System.Threading.Tasks;
+using EnvDTE;
 
 namespace PowerClean.Interfaces
 {
   public interface IPowerShellService
   {
-    void PowerClean(string folder);
-    Task PowerCleanAsync(string folder);
+    void PowerClean(params Project[] projects);
+    Task PowerCleanAsync(params Project[] projects);
   }
 }
