@@ -1,0 +1,11 @@
+{
+  "Serilog": {
+    "Using": [ "PowerClean.Sinks.VisualStudioSink", "Serilog.Sinks.EventLog.EventLogSink" ],
+    "MinimumLevel": "Debug",
+    "WriteTo": [
+      { "Name": "VisualStudioSink" },
+      { "Name": "EventLogSink" }
+    ],
+    "Enrich": [ "FromLogContext" ]
+  }
+}

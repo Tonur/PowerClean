@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
@@ -23,12 +24,14 @@ namespace PowerClean.Services
     private readonly IStatusBarService _statusBarService;
     private readonly IVsOutputWindowPane _outputWindow;
     private readonly ILogger _logger;
+    private PowerShell _powerShell;
 
     public PowerShellService(DTE2 dte, IStatusBarService statusBarService, IVsOutputWindow outputWindow, ILogger logger)
     {
       _dte = dte;
       _statusBarService = statusBarService;
       _logger = logger;
+      _powerShell = PowerShell.Create();
 
       ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -47,7 +50,7 @@ namespace PowerClean.Services
 
       _outputWindow.Clear();
       _statusBarService.StartWorkingAnimation($"{nameof(PowerShellService)} start.");
-      _logger.Information($"{nameof(PowerShellService)} start.");
+      _logger.Verbose($"{nameof(PowerShellService)} start.");
 
       int succeeded = 0, failed = 0, skipped = 0, count = 1;
 
@@ -56,21 +59,32 @@ namespace PowerClean.Services
         foreach (var project in projects)
         {
           _logger.Information(StartMessage(project, count++));
-          if (!DirectoriesExists(project))
-            skipped++;
-          else
-          {
-            var ps = PowerShell.Create();
-            ps.AddCommand(PowerCleanCommand(project.FullName));
+          var projectFolder = project.GetRootFolder();
 
-            ps.Invoke();
+          if (projectFolder != null && !string.IsNullOrWhiteSpace(projectFolder) && DirectoriesExists(projectFolder))
+          {
+            _powerShell.AddScript(PowerCleanCommand(projectFolder));
+
+            _powerShell.Invoke();
+
+            if (_powerShell.HadErrors && _powerShell.Streams.Error.Count > 0)
+            {
+              var exception = PowerShellThrowException(_powerShell.Streams.Error);
+              if (exception != null)
+              {
+                throw exception;
+              }
+            }
             succeeded++;
           }
+          else
+            skipped++;
         }
       }
       catch (Exception e)
       {
         failed++;
+        _logger.Error(e, $"{nameof(PowerShellService)} failed with exception: {{exception}}");
       }
       finally
       {
@@ -79,7 +93,10 @@ namespace PowerClean.Services
       }
     }
 
-    private string StartMessage(Project project, int index)
+    private Exception? PowerShellThrowException(IEnumerable<ErrorRecord> streamsError) =>
+      streamsError.FirstOrDefault()?.Exception;
+
+    private static string StartMessage(Project project, int index)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
       var projectConfig = project.ConfigurationManager.ActiveConfiguration;
@@ -87,13 +104,19 @@ namespace PowerClean.Services
       return $"{index}>------ PowerClean started: Project: {project.Name}, Configuration: {projectConfig.ConfigurationName} {projectConfig.PlatformName} ------";
     }
 
-    private string EndMessage(int succeeded, int failed = 0, int skipped = 0) => $"========== Clean: {succeeded} succeeded, {failed} failed, {skipped} skipped ==========";
+    private static string EndMessage(int succeeded, int failed = 0, int skipped = 0) => $"========== Clean: {succeeded} succeeded, {failed} failed, {skipped} skipped ==========";
 
-    private bool DirectoriesExists(Project project)
+    private static bool DirectoriesExists(Project project)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      return Directory.Exists(Path.Combine(project.FullName, "bin"))
-             || Directory.Exists(Path.Combine(project.FullName, "obj"));
+      var projectFolder = project.GetRootFolder();
+      return projectFolder != null && DirectoriesExists(projectFolder);
+    }
+
+    private static bool DirectoriesExists(string projectFolder)
+    {
+      return Directory.Exists(Path.Combine(projectFolder, "bin"))
+             || Directory.Exists(Path.Combine(projectFolder, "obj"));
     }
   }
 }

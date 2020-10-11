@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using PowerClean.Exceptions;
 using Serilog;
 using Serilog.Events;
+using Task = System.Threading.Tasks.Task;
 
 namespace PowerClean.Helpers
 {
@@ -175,6 +176,52 @@ namespace PowerClean.Helpers
       }
 
       return null;
+    }
+
+    public static string? GetRootFolder(this Solution solution)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      if (solution == null)
+      {
+        return null;
+      }
+
+      if (string.IsNullOrEmpty(solution.FullName))
+      {
+        return null;
+      }
+
+      string? fullPath;
+
+      try
+      {
+        fullPath = solution.Properties.Item("FullPath").Value as string;
+      }
+      catch (ArgumentException)
+      {
+        try
+        {
+          // MFC projects don't have FullPath, and there seems to be no way to query existence
+          fullPath = solution.Properties.Item("SolutionDirectory").Value as string;
+        }
+        catch (ArgumentException)
+        {
+          // Installer projects have a ProjectPath.
+          fullPath = solution.Properties.Item("SolutionDirectory").Value as string;
+        }
+      }
+
+      if (string.IsNullOrEmpty(fullPath))
+      {
+        return File.Exists(solution.FullName) ? Path.GetDirectoryName(solution.FullName) : null;
+      }
+
+      if (Directory.Exists(fullPath))
+      {
+        return fullPath;
+      }
+
+      return File.Exists(fullPath) ? Path.GetDirectoryName(fullPath) : null;
     }
 
     public static string? GetRootFolder(this Project project)

@@ -1,17 +1,12 @@
 ﻿using System;
 using System.ComponentModel.Design;
-using System.Globalization;
-using System.IO;
-using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using PowerClean.Helpers;
 using PowerClean.Interfaces;
 using Serilog;
-using Serilog.Core;
 using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
 using Task = System.Threading.Tasks.Task;
 
@@ -28,16 +23,14 @@ namespace PowerClean
 
     private readonly AsyncPackage _package;
     private readonly IMenuCommandService _commandService;
-    private readonly IStatusBarService _statusBarService;
     private readonly IPowerShellService _powerShellService;
     private readonly ILogger _logger;
 
-    private PowerCleanProjectCommand(AsyncPackage package, IMenuCommandService commandService, IStatusBarService statusBarService, IPowerShellService powerShellService, ILogger logger)
+    private PowerCleanProjectCommand(AsyncPackage package, IMenuCommandService commandService, IPowerShellService powerShellService, ILogger logger)
     {
-      this._package = package ?? throw new ArgumentNullException(nameof(package));
-      _commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
-      _statusBarService = statusBarService ?? throw new ArgumentNullException(nameof(statusBarService));
-      _powerShellService = powerShellService ?? throw new ArgumentNullException(nameof(powerShellService));
+      _package = package;
+      _commandService = commandService;
+      _powerShellService = powerShellService;
       _logger = logger;
 
       InitializeServices();
@@ -66,13 +59,11 @@ namespace PowerClean
 
       if (!(await package.GetServiceAsync(typeof(IMenuCommandService)) is IMenuCommandService commandService))
         return;
-      if (!(await package.GetServiceAsync(typeof(IStatusBarService)) is IStatusBarService statusBarService))
-        return;
       if (!(await package.GetServiceAsync(typeof(IPowerShellService)) is IPowerShellService powerShellService))
         return;
       if (!(await package.GetServiceAsync(typeof(ILogger)) is ILogger logger))
         return;
-      Instance = new PowerCleanProjectCommand(package, commandService, statusBarService, powerShellService, logger);
+      Instance = new PowerCleanProjectCommand(package, commandService, powerShellService, logger);
     }
 
     /// <summary>
@@ -82,9 +73,10 @@ namespace PowerClean
     /// </summary>
     /// <param name="sender">Event sender.</param>
     /// <param name="e">Event args.</param>
+    /// ReSharper disable once UnusedParameter.Local
     private async Task ExecuteAsync(object sender, EventArgs e)
     {
-      _logger.Verbose($"PowerClean started in {nameof(PowerCleanProjectCommand)}.");
+      _logger.Verbose($"PowerClean started in {nameof(PowerCleanProjectCommand)} by {sender.GetType().FullName}.");
       try
       {
         var project = await ProjectHelpers.GetProjectFromContextAsync();

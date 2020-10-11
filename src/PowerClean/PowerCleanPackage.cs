@@ -2,27 +2,21 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Threading;
-using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Threading;
 using PowerClean.Helpers;
 using PowerClean.Interfaces;
 using PowerClean.Services;
 using PowerClean.Sinks;
 using Serilog;
-using Serilog.Configuration;
-using Serilog.Core;
-using Serilog.Core.Enrichers;
 using Serilog.Events;
-using Constants = Serilog.Core.Constants;
 using Task = System.Threading.Tasks.Task;
 
 namespace PowerClean
@@ -30,7 +24,7 @@ namespace PowerClean
 #nullable enable
   [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
   [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
-  [Guid(PowerCleanCorePackage.PackageGuidString)]
+  [Guid(PackageGuidString)]
   [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
   [ProvideMenuResource("Menus.ctmenu", 1)]
   public sealed class PowerCleanCorePackage : AsyncPackage
@@ -51,7 +45,7 @@ namespace PowerClean
       {
         await JoinableTaskFactory.SwitchToMainThreadAsync(token);
 
-        if (!(await GetServiceAsync(typeof(SVsStatusbar)) is IVsStatusbar statusBar)) 
+        if (!(await GetServiceAsync(typeof(SVsStatusbar)) is IVsStatusbar statusBar))
           return null;
 
         var service = new StatusBarService(statusBar);
@@ -65,10 +59,46 @@ namespace PowerClean
         if (!(await GetServiceAsync(typeof(SVsOutputWindow)) is IVsOutputWindow outputWindow))
           return null;
 
-        var loggerConfig  = new LoggerConfiguration()
-          .WriteTo.VisualStudio(outputWindow) //TODO make config so it only logs some things in verbose
-          .WriteTo.EventLog(nameof(PowerClean), Application, ".", false); //TODO remember to handle outputTemplate
+        if (!(await GetServiceAsync(typeof(DTE)) is DTE2 dte))
+          return null;
 
+        var eventSource = nameof(PowerClean);
+        try
+        {
+          // searching the source throws a security exception ONLY if not exists!
+          if (EventLog.SourceExists(eventSource))
+          {   // no exception until yet means the user as admin privilege
+            EventLog.CreateEventSource(eventSource, "Application");
+          }
+        }
+        catch (SecurityException)
+        {
+          eventSource = "Application";
+        }
+
+        var loggerConfig = new LoggerConfiguration()
+          .MinimumLevel.Information()
+          .WriteTo.VisualStudio(outputWindow) //TODO make config so it only logs some things in verbose
+          .WriteTo.EventLog(eventSource, Application); //TODO remember to handle outputTemplate
+
+        #region Config
+        //var solutionFolder = dte.Solution.GetRootFolder();
+
+        //var powerCleanConfig = $"{dte.Solution.FileName}.powerclean.json";
+
+        //var powerCleanConfigFile = Path.Combine(solutionFolder, powerCleanConfig);
+
+        //EnsureCreatedConfig(powerCleanConfigFile);
+
+        //if (File.Exists(powerCleanConfigFile))
+        //{
+        //  var configuration = new ConfigurationBuilder()
+        //      .SetBasePath(solutionFolder)
+        //      .AddJsonFile(powerCleanConfig)
+        //      .Build();
+        //  loggerConfig.ReadFrom.Configuration(configuration);
+        //}
+        #endregion
 
         return await Task.FromResult(Log.Logger = loggerConfig.CreateLogger());
       });
@@ -95,116 +125,11 @@ namespace PowerClean
       await PowerCleanProjectCommand.InitializeAsync(this);
       Log.Logger.Here();
     }
-  }
 
-  public static class MethodContextExtension
-  {
-    /// <summary>
-    /// Adds Method Context to the logger via the <see cref="ILogger"/>'s ForContext method. Also logs to <see cref="LogEventLevel.Verbose"/>.
-    /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="memberName"></param>
-    /// <param name="sourceFilePath"></param>
-    /// <param name="sourceLineNumber"></param>
-    /// <returns><see cref="ILogger"/> object allowing method chaining.</returns>
-    public static ILogger Here(this ILogger logger, [CallerMemberName] string memberName = "",
-      [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+    private void EnsureCreatedConfig(string powerCleanConfigFile)
     {
-      Log.Logger.Verbose("{memberName} {sourceFilePath} {sourceLineNumber}", memberName, sourceFilePath, sourceLineNumber);
-      return logger.ForContext(nameof(memberName), memberName)
-        .ForContext(nameof(sourceFilePath), sourceFilePath)
-        .ForContext(nameof(sourceLineNumber), sourceLineNumber);
+      var stream = File.Create(powerCleanConfigFile);
+      stream.Write(Properties.Resources.SerilogConfig, 0, Properties.Resources.SerilogConfig.Length);
     }
   }
-
-
-  //public class StackContextEnricher : ILogEventEnricher
-  //{
-  //  public string[] StackContextMethodNames => new[]
-  //  {
-  //    "System.Diagnostics.StackTrace.GetStackFramesInternal(System.Diagnostics.StackFrameHelper, Int32, Boolean, System.Exception)",
-  //    "System.Diagnostics.StackFrameHelper.InitializeSourceInfo(Int32, Boolean, System.Exception)",
-  //    "System.Diagnostics.StackTrace.CaptureStackTrace(Int32, Boolean, System.Threading.Thread, System.Exception)",
-  //    "System.Diagnostics.StackTrace..ctor(Boolean)",
-  //    "PowerClean.StackContextEnricher.Enrich(Serilog.Events.LogEvent, Serilog.Core.ILogEventPropertyFactory)",
-  //    "Serilog.Core.Logger.Dispatch(Serilog.Events.LogEvent)",
-  //    "Serilog.Core.Logger.Write(Serilog.Events.LogEventLevel, System.Exception, System.String, System.Object[])",
-  //    "Serilog.Core.Logger.Information(System.String)"
-  //  };
-
-  //  public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
-  //  {
-  //    var stackTrace = new StackTrace(true);
-  //    var frames = stackTrace.GetFrames();
-  //    //Take the first frame that is not in the defined StackContext array
-  //    var frame = frames?.FirstOrDefault(stackFrame =>
-  //      stackFrame.GetMethod().DeclaringType != typeof(StackContextEnricher) &&
-  //      stackFrame.GetMethod().DeclaringType != typeof(Serilog.Core.Logger));
-
-  //    var tries = 0;
-  //    while (string.IsNullOrWhiteSpace(frame?.GetFileName()) || 20 < tries)
-  //    {
-  //      var declaringType = frame?.GetMethod().DeclaringType;
-  //      frame = null;
-  //      foreach (var stackFrame in frames)
-  //      {
-  //        if (stackFrame.GetType() == declaringType)
-  //        {
-  //          frame = stackFrame;
-  //          break;
-  //        }
-  //      }
-
-  //      tries++;
-  //    }
-
-  //    string message;
-  //    if (20 < tries)
-  //    {
-  //      message = "Failed to get file info";
-  //    }
-  //    else
-  //    {
-  //      message = $"From {frame?.GetMethod()} in {frame?.GetFileName()} at {frame?.GetFileLineNumber()}";
-  //    }
-
-  //    logEvent.AddOrUpdateProperty(new LogEventProperty(nameof(StackContextEnricher), new ScalarValue(message)));
-  //  }
-  //}
-
-  //public class CallerEnricher : ILogEventEnricher
-  //{
-  //  public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
-  //  {
-  //    var skip = 3;
-  //    while (true)
-  //    {
-  //      var stack = new System.Diagnostics.StackFrame(skip);
-  //      if (!stack.HasMethod())
-  //      {
-  //        logEvent.AddPropertyIfAbsent(new LogEventProperty("Caller", new ScalarValue("<unknown method>")));
-  //        return;
-  //      }
-
-  //      var method = stack.GetMethod();
-  //      if (method.DeclaringType?.Assembly != typeof(Log).Assembly)
-  //      {
-  //        var caller = $"{method.DeclaringType?.FullName}.{method.Name}({string.Join(", ", method.GetParameters().Select(pi => pi.ParameterType.FullName))})";
-  //        logEvent.AddPropertyIfAbsent(new LogEventProperty("Caller", new ScalarValue(caller)));
-  //        return;
-  //      }
-
-  //      skip++;
-  //    }
-  //  }
-  //}
-
-  //static class LoggerCallerEnrichmentConfiguration
-  //{
-  //  public static LoggerConfiguration WithCaller(this LoggerEnrichmentConfiguration enrichmentConfiguration)
-  //  {
-  //    return enrichmentConfiguration.With<CallerEnricher>();
-  //  }
-  //}
-
 }

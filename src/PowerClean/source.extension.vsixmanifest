@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="PowerClean.74448575-c64a-429e-b400-a745d2bb73c4" Version="0.0.3" Language="en-US" Publisher="Christoffer Kragh Pedersen" />
+        <Identity Id="PowerClean.74448575-c64a-429e-b400-a745d2bb73c4" Version="0.0.4" Language="en-US" Publisher="Christoffer Kragh Pedersen" />
         <DisplayName>PowerClean</DisplayName>
         <Description xml:space="preserve">Clean up bin/obj folders in project and solutions. Gets rid of all data in those folders, that potentially messes with the build or functionallity of Visual Studio.
 Icon Credits: Clean by Vadim Solomakhin from the Noun Project</Description>
-        <License>LICENSE.TXT</License>
+        <MoreInfo>https://github.com/Tonur/PowerClean</MoreInfo>
+        <License>Resources\LICENSE.TXT</License>
+        <ReleaseNotes>Resources\ChangeLog.rtf</ReleaseNotes>
         <Icon>Resources\PowerCleanIconHiRez.png</Icon>
         <PreviewImage>Resources\PowerCleanIconHiRez.png</PreviewImage>
         <Tags>PowerClean; Clean; Misc; Miscelaneous; Menu; Tools; Build</Tags>
