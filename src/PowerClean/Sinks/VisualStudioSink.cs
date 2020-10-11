@@ -23,7 +23,7 @@ namespace PowerClean.Sinks
     private readonly MessageTemplateTextFormatter? _templateTextFormatter;
 
     public VisualStudioSink(IVsOutputWindow outputWindow, LogEventLevel minimumLogEventLevel = LogEventLevel.Information, string outputTemplate = "{Message}",
-      MessageTemplateTextFormatter templateTextFormatter = null)
+      MessageTemplateTextFormatter? templateTextFormatter = null)
     {
       _outputTemplate = outputTemplate;
       _minimumLogEventLevel = minimumLogEventLevel;

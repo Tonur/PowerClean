@@ -63,7 +63,7 @@ namespace PowerClean.Services
 
           if (projectFolder != null && !string.IsNullOrWhiteSpace(projectFolder) && DirectoriesExists(projectFolder))
           {
-            _powerShell.AddScript(PowerCleanCommand(projectFolder));
+            _powerShell.AddScript(PowerCleanCommand(projectFolder), true);
 
             _powerShell.Invoke();
 

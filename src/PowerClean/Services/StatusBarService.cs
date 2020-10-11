@@ -86,7 +86,11 @@ namespace PowerClean.Services
       _statusBar.SetText(message);
     }
 
-    void IDisposable.Dispose() => Dispose();
+    void IDisposable.Dispose()
+    {
+      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+      Dispose();
+    }
 
     public void Dispose(string? endMessage = null)
     {
@@ -120,7 +124,11 @@ namespace PowerClean.Services
       _statusBar.Animation(1, ref _animationIcon);
     }
 
-    void IDisposable.Dispose() => Dispose();
+    void IDisposable.Dispose()
+    {
+      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+      Dispose();
+    }
 
     public void Dispose(string? message = null, short? icon = null)
     {
